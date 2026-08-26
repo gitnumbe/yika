@@ -73,3 +73,15 @@ class QAAsk(BaseModel):
 
 class QAAnswerIn(BaseModel):
     answer: str
+
+
+class CandidateRequirement(BaseModel):
+    title: str
+    description: str = ""
+    source_ref: str = ""
+
+
+class ConfirmRequirements(BaseModel):
+    project_id: int | None = None
+    customer_id: int | None = None
+    candidates: list[CandidateRequirement]

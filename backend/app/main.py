@@ -2,7 +2,7 @@ from fastapi import FastAPI
 
 from . import models  # noqa: F401  确保模型注册到 Base.metadata
 from .database import Base, engine
-from .routers import auth, backup, customers, knowledge, projects, qa, requirements
+from .routers import auth, backup, customers, knowledge, notes, projects, qa, recordings, requirements
 
 app = FastAPI(title="Team Collab Agent")
 
@@ -19,5 +19,7 @@ app.include_router(requirements.router)
 app.include_router(knowledge.router)
 app.include_router(backup.router)
 app.include_router(qa.router)
+app.include_router(recordings.router)
+app.include_router(notes.router)
 
 Base.metadata.create_all(bind=engine)
