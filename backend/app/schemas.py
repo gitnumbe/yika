@@ -65,3 +65,11 @@ class KnowledgeIn(BaseModel):
 class KnowledgeOut(KnowledgeIn):
     id: int
     model_config = {"from_attributes": True}
+
+
+class QAAsk(BaseModel):
+    question: str
+
+
+class QAAnswerIn(BaseModel):
+    answer: str
