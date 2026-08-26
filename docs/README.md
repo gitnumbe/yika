@@ -19,6 +19,7 @@
 | `plans/...mvp.md` | 具体怎么一步步实现 |
 | `business-rules.md` | 业务上必须遵守的规则是什么 |
 | `module-dependencies.md` | 改某个模块会影响谁（影响分析，防全局失控） |
+| `change-budget.md` | 哪些能改、哪些不能改（变更预算，防顺手重构） |
 | `decisions/01-pure-internal-tool.md` | 为什么是纯内部工具、客户无账号 |
 | `decisions/02-multi-user-data-model.md` | 为什么数据模型从第一天就是多用户 |
 | `decisions/03-llm-dual-source.md` | 为什么要大模型 + 小模型双源 |
