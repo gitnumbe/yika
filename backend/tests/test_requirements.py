@@ -1,3 +1,8 @@
+import pytest
+
+pytestmark = pytest.mark.l2
+
+
 def _token(client, username="tech1", role="tech"):
     client.post("/auth/register", json={"username": username, "password": "pw", "role": role})
     return client.post("/auth/login", json={"username": username, "password": "pw"}).json()["token"]

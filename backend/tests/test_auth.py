@@ -1,3 +1,8 @@
+import pytest
+
+pytestmark = pytest.mark.l2
+
+
 def test_register_login(client):
     r = client.post("/auth/register", json={"username": "alice", "password": "pw123", "role": "instructor"})
     assert r.status_code == 200

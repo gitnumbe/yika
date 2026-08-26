@@ -1,3 +1,7 @@
+import pytest
+
+pytestmark = pytest.mark.l1
+
 import httpx
 from app.services.asr import FunASRProvider
 

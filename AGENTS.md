@@ -11,7 +11,8 @@
 3. `docs/business-rules.md`（业务规则：权限矩阵、状态机、防幻觉铁律）
 4. `docs/module-dependencies.md`（模块依赖图 + 影响分析：改动前必读，防止改一处坏全局）
 5. `docs/change-budget.md`（变更预算：标注冻结层/受控层/自由层，防止顺手重构）
-6. `docs/decisions/*.md`（每个核心功能**为什么这么设计**，含备选方案为何被否）
+6. `docs/testing-strategy.md`（三层次测试：单元/关联回测/业务闭环，编译通过≠业务正确）
+7. `docs/decisions/*.md`（每个核心功能**为什么这么设计**，含备选方案为何被否）
 
 **规则**：改代码前先读对应决策文档；发现决策过时，先更新 `decisions/*.md`（标记"已变更+原因"）再改代码；做了新架构决策就新增一个 `decisions/NN-*.md`；**改动任何模块前，先按 `module-dependencies.md` 做影响分析**（判断影响等级 + 回归范围）；**改动前先按 `change-budget.md` 声明预算**（哪些能动、哪些是冻结层不能顺手改）。
 

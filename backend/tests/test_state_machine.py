@@ -1,3 +1,7 @@
+import pytest
+
+pytestmark = pytest.mark.l1
+
 from app.models import ReqStatus as S
 from app.state_machine import can_transition
 
