@@ -15,3 +15,6 @@ dist/
 
 # Uploads
 backend/uploads/
+
+# Vite
+.vite/
