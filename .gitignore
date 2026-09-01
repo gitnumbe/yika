@@ -18,3 +18,8 @@ backend/uploads/
 
 # Vite
 .vite/
+
+# 语音服务虚拟环境（误提交防护）
+deploy/.venv-voice/
+.venv-voice/
+*.16k.wav
