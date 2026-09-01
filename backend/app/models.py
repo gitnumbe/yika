@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .database import Base
@@ -47,6 +47,44 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(200))
     role: Mapped[Role] = mapped_column(Enum(Role))
+    # 生产级（开发文档 §10.3）：登录安全
+    failed_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class RefreshToken(Base):
+    """刷新令牌（只存哈希，可吊销）——生产级双令牌。"""
+    __tablename__ = "refresh_tokens"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    token_hash: Mapped[str] = mapped_column(String(200))
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class AuditLog(Base):
+    """审计日志（只增不改）——生产级 §10.3。"""
+    __tablename__ = "audit_logs"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    action: Mapped[str] = mapped_column(String(50))
+    target_type: Mapped[str] = mapped_column(String(50), default="")
+    target_id: Mapped[str] = mapped_column(String(100), default="")
+    ip: Mapped[str] = mapped_column(String(64), default="")
+    ua: Mapped[str] = mapped_column(String(300), default="")
+    detail: Mapped[dict] = mapped_column(JSON, default={})
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class SystemSetting(Base):
+    """系统配置（免改码）——生产级 §7.1。"""
+    __tablename__ = "system_settings"
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    value: Mapped[dict] = mapped_column(JSON, default={})
+    updated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class Customer(Base):
@@ -93,6 +131,9 @@ class Note(Base):
     decisions: Mapped[str] = mapped_column(Text, default="")
     todos: Mapped[str] = mapped_column(Text, default="")
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    # 生产级（v2.0）：TTS 产物 + 质量标记
+    audio_tts_path: Mapped[str] = mapped_column(String(300), default="")
+    quality_flags: Mapped[str] = mapped_column(String(200), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
@@ -141,4 +182,9 @@ class ProcessingTask(Base):
     recording_id: Mapped[int] = mapped_column(ForeignKey("recordings.id"))
     stage: Mapped[str] = mapped_column(String(30), default="transcribe")
     status: Mapped[str] = mapped_column(String(20), default="pending")
+    # 生产级（开发文档 §8.6）：重试/幂等
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    retry_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_error: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

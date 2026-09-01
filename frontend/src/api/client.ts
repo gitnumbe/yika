@@ -1,4 +1,5 @@
-const BASE = "http://127.0.0.1:8000";
+/** API 客户端：统一 BASE（开发 8010 / 生产由 VITE_API_BASE 注入） */
+const BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8010";
 
 export function apiFetch(path: string, options: RequestInit = {}) {
   const token = localStorage.getItem("token");
