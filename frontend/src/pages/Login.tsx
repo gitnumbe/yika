@@ -2,6 +2,29 @@ import { useState, type FormEvent } from "react";
 import { useAuth } from "../context/AuthContext";
 import "./login.css";
 
+/* GateAI 品牌 logo：Gate(白) + AI(蓝) + 蓝色四角星
+   深色适配版，全部内联实现，无外部图片依赖 */
+function GateAILogo({ size = 17 }: { size?: number }) {
+  return (
+    <span className="gateai-logo" style={{ fontSize: size }}>
+      <svg
+        width={size * 1.15}
+        height={size * 1.15}
+        viewBox="0 0 24 24"
+        className="gateai-star"
+        aria-hidden="true"
+      >
+        <path
+          d="M12 2.4c.55 4.3 5 8.7 9.3 9.3-4.3.6-8.75 5-9.3 9.3-.55-4.3-5-8.7-9.3-9.3C7 11.1 11.45 6.7 12 2.4Z"
+          fill="currentColor"
+        />
+      </svg>
+      <span className="gateai-gate">Gate</span>
+      <span className="gateai-ai">AI</span>
+    </span>
+  );
+}
+
 export default function Login() {
   const { login } = useAuth();
   const [u, setU] = useState("");
@@ -42,8 +65,7 @@ export default function Login() {
           />
           <div className="login-media-overlay" />
           <div className="login-brand">
-            <span className="login-brand-dot" />
-            <span className="login-brand-name">Team Collab</span>
+            <GateAILogo size={20} />
           </div>
           <div className="login-media-caption">AI 驱动的团队协作平台</div>
         </div>
