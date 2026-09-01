@@ -10,13 +10,13 @@
 1. **分析类**（笔记整理、需求提炼、答疑）：需要理解语义、结构化输出，属于"复杂推理"。
 2. **去噪类**（过滤录音转写里的废话/寒暄/重复）：本质是"句子级二分类"，属于"简单判断"。
 
-而团队能用的模型有两个：
-- 内网 Qwen3-27B（NVFP4，大模型，能力强的 OpenAI 兼容接口）
+而团队能用的模型有两条通道（**模型实例会随版本更换，只登记在 `.env` 与开发文档 §4.0 基线表**）：
+- 内网 OpenAI 兼容大模型通道（当前实例 `deepseek-v4-flash-vision-exp`，能力强的 OpenAI 兼容接口）
 - 本机 Ollama `qwen3:4b-instruct`（小模型，已下载）
 
 ## 决策
 
-**双源**：分析类走内网 Qwen3-27B，去噪类走本机 Ollama 小模型。配置上用两套独立的 provider 参数。
+**双源**：分析类走内网大模型通道（实例以 `.env` 为准），去噪类走本机 Ollama 小模型。配置上用两套独立的 provider 参数。
 
 ## 为什么这么设计
 
@@ -26,7 +26,7 @@
 
 ## 备选方案（为何没选）
 
-- **统一用大模型**：去噪也要走内网 Qwen，慢、费、且简单任务没必要。
+- **统一用大模型**：去噪也要走内网大模型，慢、费、且简单任务没必要。
 - **统一用小模型**：分析类任务 4B 模型能力不足，笔记整理和需求提炼质量会崩。
 
 ## 核心原则
@@ -35,6 +35,6 @@
 
 ## 关联代码
 
-- `backend/app/services/llm.py` — `get_llm()`（Qwen 大模型）/ `get_denoise_llm()`（Ollama 小模型）
+- `backend/app/services/llm.py` — `get_llm()`（大模型，实例读 `.env`）/ `get_denoise_llm()`（Ollama 小模型）
 - `backend/app/config.py` — `llm_*` 与 `ollama_*` 两组配置
 - `backend/app/services/denoise.py` — 去噪用 `get_denoise_llm()`

@@ -29,6 +29,7 @@
 | `decisions/06-anti-hallucination.md` | 为什么 LLM 只产候选、人工确认（防幻觉铁律） |
 | `decisions/07-qa-agent.md` | 为什么答疑 MVP 用关键词检索、如何回流 |
 | `decisions/08-deployment-path.md` | 为什么先内网电脑、后公司服务器 |
+| `decisions/09-voice-local-stt-tts.md` | 为什么语音通道本地自建（Qwen3-ASR-1.7B + dots.tts-mf） |
 
 ## 维护约定
 

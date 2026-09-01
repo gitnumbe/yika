@@ -1,7 +1,7 @@
 # 决策 04：录音流水线设计（去噪 + 不做三方说话人分离）
 
-**状态**：已采纳
-**日期**：2026-08-25
+**状态**：已采纳（转写环节选型于 2026-09-01 变更，见 [[09-voice-local-stt-tts]]，决策本身不变）
+**日期**：2026-08-25（变更 2026-09-01）
 
 ## 背景
 
@@ -14,7 +14,7 @@
 **不做三方说话人分离。** 主链路是「小模型去噪 → 大模型分析」：
 
 ```
-录音 → FunASR 转写 → 小模型去噪(过滤废话) → 大模型整理笔记 → 大模型提炼需求
+录音 → Qwen3-ASR-1.7B 转写（决策 09，原 FunASR 已变更）→ 小模型去噪(过滤废话) → 大模型整理笔记 → 大模型提炼需求
 ```
 
 - **内部沟通场景**：纯去噪 + 分析，完全不区分人。
@@ -38,7 +38,7 @@
 
 ## 关联代码
 
-- `backend/app/services/asr.py` — FunASR 转写抽象
+- `backend/app/services/asr.py` — STT 转写抽象（Qwen3-ASR，决策 09；原 FunASR 已变更）
 - `backend/app/services/denoise.py` — 去噪（用 `get_denoise_llm()`）
 - `backend/app/services/note_gen.py` — 笔记整理（用 `get_llm()`）
 - `backend/app/services/req_extract.py` — 需求提炼（用 `get_llm()`）

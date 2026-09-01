@@ -4,7 +4,7 @@
 
 **Goal:** 交付一个可本机多开运行的 MVP：账号登录、客户/项目/需求档案、需求状态机、录音→转写→去噪→笔记→需求提炼完整链路、答疑 agent + 知识库、数据备份导出。
 
-**Architecture:** Electron + React 桌面壳作为客户端，通过内网 HTTP 调用 FastAPI 后端。后端用 SQLite 存数据，AI 能力走抽象层（大模型=内网 Qwen3-27B OpenAI 兼容接口，去噪=本机 Ollama qwen3:4b-instruct，ASR=内网 FunASR）。录音转写是耗时任务，用后台任务 + 任务状态表驱动，客户端轮询进度。
+**Architecture:** Electron + React 桌面壳作为客户端，通过内网 HTTP 调用 FastAPI 后端。后端用 SQLite 存数据，AI 能力走抽象层（大模型=内网 OpenAI 兼容接口·实例以 `.env` 为准，去噪=本机 Ollama 小模型 `qwen3:4b-instruct`，STT=Qwen3-ASR-1.7B 本地服务·决策 09，TTS=dots.tts-mf）。录音转写是耗时任务，用后台任务 + 任务状态表驱动，客户端轮询进度。
 
 **Tech Stack:** Python 3.10 + FastAPI + SQLAlchemy 2.0 + PyJWT + pytest；Electron + React + TypeScript + Vite。
 
@@ -13,8 +13,8 @@
 ## Global Constraints
 
 - 后端 Python 3.10，数据库 SQLite（起步），ORM 用 SQLAlchemy 2.0。
-- LLM 双源：大模型（内网 Qwen3-27B，OpenAI 兼容接口，`base_url`/`api_key`/`model` 从环境变量读取）；去噪小模型（本机 Ollama `qwen3:4b-instruct`）。
-- ASR：内网 FunASR（`base_url` 从环境变量读取），接口做成可替换抽象。
+- LLM 双源：大模型（内网 OpenAI 兼容接口，当前实例 `deepseek-v4-flash-vision-exp`，`base_url`/`api_key`/`model` 从环境变量读取——**模型名只在 `.env` 与开发文档 §4.0 基线表登记，正文不写死**）；去噪小模型（本机 Ollama `qwen3:4b-instruct`）。
+- ASR(STT)：Qwen3-ASR-1.7B 本地服务（决策 09，替代 FunASR），`ASR_BASE_URL` 从环境变量读取，接口做成可替换抽象。
 - 所有 LLM 产出只进"候选区"，落库决策由人确认（防幻觉铁律）。
 - 需求状态枚举：`draft`、`pending_review`、`feasible`、`in_dev`、`delivered`、`info_needed`（信息待补充→讲师）、`plan_needed`（方案待调整→技术）、`infeasible`（不可行，可重新评估）。
 - 数据模型从一开始就是多用户的（每条数据挂 user_id 或 author_id）。
@@ -48,8 +48,9 @@ backend/
       backup.py        # 备份导出
     services/
       __init__.py
-      llm.py           # LLM 抽象层（Qwen + Ollama）
-      asr.py           # ASR 抽象层（FunASR）
+      llm.py           # LLM 抽象层（大模型 + 去噪小模型）
+      asr.py           # STT 抽象层（Qwen3-ASR）
+      tts.py           # TTS 抽象层（dots.tts·v2.0）
       denoise.py       # 去噪（Ollama 二分类）
       note_gen.py      # 笔记整理（四块结构化）
       req_extract.py   # 需求提炼（候选需求）
@@ -127,10 +128,11 @@ pytest==8.3.3
 ```
 LLM_BASE_URL=http://<内网Qwen地址>/v1
 LLM_API_KEY=sk-xxx
-LLM_MODEL=qwen3-27b
+LLM_MODEL=deepseek-v4-flash-vision-exp
 OLLAMA_BASE_URL=http://127.0.0.1:11434
 OLLAMA_MODEL=qwen3:4b-instruct
-ASR_BASE_URL=http://<内网FunASR地址>
+ASR_BASE_URL=http://<STT服务>/v1
+TTS_BASE_URL=http://<TTS服务>/v1
 DATABASE_URL=sqlite:///./app.db
 SECRET_KEY=change-me
 ```
@@ -143,7 +145,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     llm_base_url: str = ""
     llm_api_key: str = ""
-    llm_model: str = "qwen3-27b"
+    llm_model: str = "deepseek-v4-flash-vision-exp"
     ollama_base_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen3:4b-instruct"
     asr_base_url: str = ""
@@ -1055,7 +1057,7 @@ git commit -m "feat: knowledge base CRUD (tech write, instructor read)"
 
 ---
 
-### Task 8: LLM 抽象层（Qwen + Ollama）
+### Task 8: LLM 抽象层（大模型 + 去噪小模型）
 
 **Files:**
 - Create: `backend/app/services/__init__.py`
@@ -1063,7 +1065,7 @@ git commit -m "feat: knowledge base CRUD (tech write, instructor read)"
 - Test: `backend/tests/test_llm.py`
 
 **Interfaces:**
-- Produces: `app.services.llm.get_llm() -> LLMProvider`（大模型，Qwen）、`app.services.llm.get_denoise_llm() -> LLMProvider`（Ollama）。`LLMProvider.chat(messages: list[dict]) -> str`。
+- Produces: `app.services.llm.get_llm() -> LLMProvider`（大模型，实例随 `.env` 配置）、`app.services.llm.get_denoise_llm() -> LLMProvider`（Ollama）。`LLMProvider.chat(messages: list[dict]) -> str`。
 - Consumes: `app.config.settings`。
 
 - [ ] **Step 1: 写 llm.py**
@@ -1129,10 +1131,10 @@ def test_openai_provider_formats_request(monkeypatch):
             def json(self): return {"choices": [{"message": {"content": "hi"}}]}
         return R()
     monkeypatch.setattr(httpx, "post", fake_post)
-    p = OpenAICompatProvider("http://x/v1", "sk", "qwen3-27b")
+    p = OpenAICompatProvider("http://x/v1", "sk", os.environ.get("LLM_MODEL", "deepseek-v4-flash-vision-exp"))
     assert p.chat([{"role": "user", "content": "你好"}]) == "hi"
     assert calls["url"] == "http://x/v1/chat/completions"
-    assert calls["json"]["model"] == "qwen3-27b"
+    assert calls["json"]["model"] == os.environ.get("LLM_MODEL", "deepseek-v4-flash-vision-exp")
 
 def test_ollama_provider_formats_request(monkeypatch):
     calls = {}
@@ -1158,12 +1160,12 @@ Expected: 2 passed
 
 ```bash
 git add backend/app/services/__init__.py backend/app/services/llm.py backend/tests/test_llm.py
-git commit -m "feat: LLM abstraction layer (Qwen OpenAI-compat + Ollama)"
+git commit -m "feat: LLM abstraction layer (big-model OpenAI-compat + denoise Ollama)"
 ```
 
 ---
 
-### Task 9: ASR 抽象层（FunASR）
+### Task 9: STT/TTS 抽象层（Qwen3-ASR + dots.tts）
 
 **Files:**
 - Create: `backend/app/services/asr.py`
@@ -1183,7 +1185,7 @@ class ASRProvider:
     def transcribe(self, audio_bytes: bytes) -> str:
         raise NotImplementedError
 
-class FunASRProvider(ASRProvider):
+class QwenASRProvider(ASRProvider):   # 决策 09：Qwen3-ASR（原 FunASR 已变更）
     def __init__(self, base_url: str):
         self.base_url = base_url.rstrip("/")
 
@@ -1195,18 +1197,18 @@ class FunASRProvider(ASRProvider):
         )
         resp.raise_for_status()
         data = resp.json()
-        # FunASR 返回结构视部署而定；此处约定返回 {"text": "..."}
+        # Qwen3-ASR 返回 {text, segments, language}；此处约定 HTTP 契约（开发文档 §5.1）
         return data.get("text", "")
 
 def get_asr() -> ASRProvider:
-    return FunASRProvider(settings.asr_base_url)
+    return QwenASRProvider(settings.asr_base_url)
 ```
 
 - [ ] **Step 2: 写 test_asr.py（mock httpx）**
 
 ```python
 import httpx
-from app.services.asr import FunASRProvider
+from app.services.asr import QwenASRProvider
 
 def test_funasr_formats_request(monkeypatch):
     def fake_post(url, **kwargs):
@@ -1217,7 +1219,7 @@ def test_funasr_formats_request(monkeypatch):
             def json(self): return {"text": "大家好"}
         return R()
     monkeypatch.setattr(httpx, "post", fake_post)
-    assert FunASRProvider("http://asr").transcribe(b"fake-audio") == "大家好"
+    assert QwenASRProvider("http://asr").transcribe(b"fake-audio") == "大家好"
 ```
 
 - [ ] **Step 3: 运行测试**
@@ -1229,7 +1231,7 @@ Expected: 1 passed
 
 ```bash
 git add backend/app/services/asr.py backend/tests/test_asr.py
-git commit -m "feat: ASR abstraction layer (FunASR)"
+git commit -m "feat: STT/TTS abstraction layer (Qwen3-ASR + dots.tts)"
 ```
 
 ---

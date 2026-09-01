@@ -25,14 +25,16 @@
 
 **改代码前先读这两份文档**，它们是最新的需求与任务权威。
 
-## 技术栈
+## 技术栈（生产级基线 v2.0 · 权威见 Obsidian `yika/开发文档.md`）
 
-- **后端**：Python 3.10 + FastAPI + SQLAlchemy 2.0 + SQLite（起步）+ PyJWT + bcrypt
+- **后端**：Python 3.11 + FastAPI + SQLAlchemy 2.0 + **Alembic 迁移** + **PostgreSQL 16（生产）/ SQLite（开发）** + PyJWT + bcrypt
 - **前端**：Electron + React 18 + TypeScript + Vite + react-router-dom
-- **AI**（走抽象层，可切换）：
-  - 大模型：内网 Qwen3-27B（OpenAI 兼容接口），配置在 `.env` 的 `LLM_*`
-  - 去噪小模型：本机 Ollama `qwen3:4b-instruct`，配置在 `OLLAMA_*`
-  - ASR：内网 FunASR，配置在 `ASR_BASE_URL`（接口约定 `POST /recognition` → `{"text": "..."}`）
+- **部署**：Docker Compose + Nginx(TLS 反向代理) + Prometheus/Grafana 监控 + 每日备份（见开发文档 §11）
+- **AI**（走抽象层，可切换；模型实例只登记在 `.env` 与开发文档 §4.0 基线表，正文一律用逻辑名）：
+  - 大模型：内网 OpenAI 兼容接口（当前实例 `deepseek-v4-flash-vision-exp`），配置在 `.env` 的 `LLM_*`
+  - 去噪小模型：本机 Ollama（当前 `qwen3:4b-instruct`），配置在 `OLLAMA_*`
+  - **STT**：Qwen3-ASR-1.7B（本地自建服务 `ASR_BASE_URL`，`POST /v1/transcribe`）——决策 09，替代 FunASR
+  - **TTS**：dots.tts-mf（本地自建服务 `TTS_BASE_URL`，`POST /v1/speak`）——决策 09，笔记/答疑朗读
 
 ## 目录结构
 
@@ -47,7 +49,9 @@ backend/
     state_machine.py # 需求状态机（纯函数，无 IO）
     schemas.py       # Pydantic 请求/响应模型
     routers/         # auth/customers/projects/requirements/knowledge/qa/backup
-    services/        # llm.py / asr.py / qa_service.py（抽象层 + 业务服务）
+    services/        # llm.py / asr.py / tts.py / qa_service.py（抽象层 + 业务服务）
+    audit.py         # 审计日志（生产 §10.3）
+  alembic/           # 数据库迁移（生产必要）
   tests/             # pytest，conftest.py 用内存 SQLite + TestClient
   requirements.txt
 frontend/
@@ -56,6 +60,9 @@ frontend/
     api/client.ts    # apiFetch：自动带 token，401 跳登录
     context/AuthContext.tsx
     pages/           # Login/Dashboard/Projects/Requirements/Knowledge/QA
+deploy/
+  docker-compose.yml # 生产编排（backend/worker/postgres/redis/stt/tts/nginx/monitoring）
+  nginx.conf
 ```
 
 ## 核心业务约定（改代码必须遵守）
@@ -111,10 +118,11 @@ npm run build    # tsc + vite build（提交前必须通过）
 
 1. **端口 8000 被占用**：本机 8000 端口被另一个旧后端（`backend.main:create_app`，PID 15876）占用。我们的前端 `client.ts` 默认连 `127.0.0.1:8000`。本地启动后端时用 `--port 8010`（或先解决端口冲突），并确保前端 BASE 一致。
 2. **PowerShell 发中文 JSON 会乱码**：用 `Invoke-RestMethod` 传中文 body 会编码错误。验证中文接口请用 Python + httpx（参考 `backend/e2e_check.py` 的模式，该文件已删，但模式要记住），或直接用 pytest。
-3. **AI 端点依赖**：`services/llm.py`、`services/asr.py` 的单元测试用 mock httpx，不依赖真实端点。但录音流水线（Task 10-13）和真实联调需要 FunASR、内网 Qwen、Ollama 就绪。写这些部分的代码时用 mock 测试锁逻辑，真实联调单独做。
-4. **音频格式**：前端 MediaRecorder 产出 webm/opus，FunASR 要 16kHz 单声道 WAV。中间必须 ffmpeg 转码（`-ar 16000 -ac 1`）。这是录音流水线的已知坑。
+3. **AI 端点依赖**：`services/llm.py`、`services/asr.py`、`services/tts.py` 的单元测试用 mock httpx，不依赖真实端点。录音流水线（Task 10-13）和真实联调需要 STT（Qwen3-ASR）、TTS（dots.tts）、内网大模型、Ollama 就绪。写这些部分的代码时用 mock 测试锁逻辑，真实联调单独做（STT/TTS 本地服务 `http://127.0.0.1:8051/8052` 起）。
+4. **音频格式**：前端 MediaRecorder 产出 webm/opus，Qwen3-ASR 要 16kHz 单声道 WAV。中间必须 ffmpeg 转码（`-ar 16000 -ac 1`）。这是录音流水线的已知坑。
 5. **SQLite 测试库**：跑 pytest 会在 `backend/` 生成 `test.db`，已被 `.gitignore` 忽略（`*.db`），不要手动提交它。
-6. **本机无 NVIDIA GPU**（Intel Arc 130T），FunASR 和 Ollama 都只能 CPU 跑，性能足够 MVP，但别指望 GPU 加速。
+6. **本机无 NVIDIA GPU**（Intel Arc 130T），STT/TTS/Ollama 都只能 CPU 跑——功能可用，但**吞吐受限**；生产部署到内网 GPU 服务器（开发文档 §3.4）。
+7. **模型下载**：ASR 权重在 `D:/models/yika/asr/qwen3-asr-1.7b`（已就绪）；TTS 权重在 `D:/models/yika/tts/dots-tts-mf`（见下方注意）。下载需 `HF_ENDPOINT=https://hf-mirror.com`；若遇 xet 401，加 `export HF_HUB_DISABLE_XET=1` 走传统 HTTP。
 
 ## 提交规范
 
