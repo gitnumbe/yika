@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -10,9 +12,33 @@ from ..services import req_extract
 router = APIRouter(prefix="/notes", tags=["notes"])
 
 
+def _note_dict(n: Note) -> dict:
+    """Note → dict（points/decisions/todos 存储为 JSON 字符串，读出还原数组）。"""
+    def _parse(v):
+        if not v:
+            return []
+        if isinstance(v, list):
+            return v
+        try:
+            return json.loads(v)
+        except (json.JSONDecodeError, TypeError):
+            return v  # 兼容旧数据（纯文本）
+    return {
+        "id": n.id,
+        "summary": n.summary,
+        "points": _parse(n.points),
+        "decisions": _parse(n.decisions),
+        "todos": _parse(n.todos),
+        "scene": n.scene,
+        "project_id": n.project_id,
+        "transcript": n.transcript,
+        "created_at": n.created_at.isoformat() if n.created_at else None,
+    }
+
+
 @router.get("/")
 def list_notes(db: Session = Depends(get_session), user: User = Depends(require_role("admin", "tech", "instructor"))):
-    return [{"id": n.id, "summary": n.summary, "scene": n.scene, "project_id": n.project_id} for n in db.query(Note).all()]
+    return [_note_dict(n) for n in db.query(Note).order_by(Note.created_at.desc()).all()]
 
 
 @router.post("/{note_id}/extract")
@@ -20,8 +46,8 @@ def extract(note_id: int, db: Session = Depends(get_session), user: User = Depen
     note = db.get(Note, note_id)
     if not note:
         raise HTTPException(404, "笔记不存在")
-    # 只返回候选，不落库（防幻觉铁律）
-    return req_extract.extract_candidates(note.transcript or note.points)
+    # 只返回候选 + quality，不落库（防幻觉铁律）
+    return req_extract.extract_candidates(note.transcript or note.points or "")
 
 
 @router.post("/{note_id}/confirm-requirements")
