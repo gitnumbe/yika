@@ -1,0 +1,258 @@
+/* ============================================================
+   GateAI 通用设计系统（生产级 · 与登录页同 token）
+   ============================================================ */
+:root {
+  --gate-blue: #2563eb;
+  --gate-blue-hover: #1d4ed8;
+  --gate-blue-soft: rgba(37, 99, 235, 0.12);
+  --gate-blue-glow: rgba(37, 99, 235, 0.5);
+  --bg-deep: #050505;
+  --bg-panel: #0a0e14;
+  --bg-card: #0d1218;
+  --bg-input: #111827;
+  --border: rgba(255, 255, 255, 0.09);
+  --border-hover: rgba(255, 255, 255, 0.16);
+  --text: #e5e7eb;
+  --text-muted: #8b949e;
+  --text-dim: #6b7280;
+  --danger: #f87171;
+  --success: #34d399;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: "Outfit", -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============ 布局 ============ */
+.gate-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 500px at 80% -10%, rgba(37, 99, 235, 0.08), transparent 60%),
+    var(--bg-deep);
+  padding: 32px 40px;
+}
+
+.gate-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.gate-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+.gate-brand .star {
+  color: var(--gate-blue);
+  filter: drop-shadow(0 0 6px var(--gate-blue-glow));
+}
+
+.gate-nav {
+  display: flex;
+  gap: 4px;
+  background: rgba(17, 24, 39, 0.7);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px;
+}
+.gate-nav a {
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 200ms ease, color 200ms ease;
+}
+.gate-nav a:hover {
+  color: #fff;
+}
+.gate-nav a.active {
+  background: var(--gate-blue);
+  color: #fff;
+}
+
+.gate-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* ============ 卡片 ============ */
+.gate-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  transition: border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+}
+.gate-card:hover {
+  border-color: var(--border-hover);
+}
+
+.gate-card h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  color: #fff;
+}
+
+/* ============ 按钮（统一动效：hover 上浮 / 按下缩放） ============ */
+.gate-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--gate-blue);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 220ms ease;
+}
+.gate-btn:hover {
+  transform: translateY(-1px);
+  background: var(--gate-blue-hover);
+  box-shadow: 0 8px 24px var(--gate-blue-glow);
+}
+.gate-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+.gate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.gate-btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+.gate-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-hover);
+  color: #fff;
+  box-shadow: none;
+}
+
+.gate-btn-danger {
+  background: rgba(248, 113, 113, 0.12);
+  color: var(--danger);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+.gate-btn-danger:hover {
+  background: rgba(248, 113, 113, 0.2);
+  box-shadow: 0 8px 24px rgba(248, 113, 113, 0.25);
+}
+
+/* ============ 表单 ============ */
+.gate-input {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 220ms ease, box-shadow 220ms ease, background 220ms ease;
+}
+.gate-input::placeholder {
+  color: var(--text-dim);
+}
+.gate-input:focus {
+  border-color: var(--gate-blue);
+  background: #0f172a;
+  box-shadow: 0 0 0 3px var(--gate-blue-soft);
+}
+.gate-input:hover {
+  border-color: var(--border-hover);
+}
+
+.gate-label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.gate-field {
+  margin-bottom: 14px;
+}
+
+/* ============ 列表/标签 ============ */
+.gate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.gate-row:last-child {
+  border-bottom: none;
+}
+
+.gate-tag {
+  display: inline-flex;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--gate-blue-soft);
+  color: #7ea8f7;
+  margin-left: 8px;
+}
+
+.gate-muted {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* 徽标: 状态色 */
+.gate-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.gate-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.gate-status-blue { background: rgba(37,99,235,.13); color: #7ea8f7; }
+.gate-status-green { background: rgba(52,211,153,.12); color: var(--success); }
+.gate-status-red { background: rgba(248,113,113,.12); color: var(--danger); }
+.gate-status-gray { background: rgba(139,148,158,.12); color: var(--text-muted); }
