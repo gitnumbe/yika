@@ -1,0 +1,13 @@
+# yika TTS 服务镜像（dots.tts-mf · 决策 09）
+# 模型权重通过卷挂载（/models/dots-tts-mf），镜像不含模型
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir dots-tts fastapi uvicorn soundfile numpy
+
+COPY deploy/tts_server.py .
+
+EXPOSE 8052
+CMD ["python", "tts_server.py", "--host", "0.0.0.0", "--port", "8052"]

@@ -1,0 +1,14 @@
+# yika STT 服务镜像（Qwen3-ASR-1.7B · 决策 09）
+# 模型权重通过卷挂载（/models/qwen3-asr-1.7b），镜像不含模型
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# 编译依赖（torch CPU wheel 无需编译，直接装）
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir transformers fastapi uvicorn soundfile numpy
+
+COPY deploy/stt_server.py .
+
+EXPOSE 8051
+CMD ["python", "stt_server.py", "--host", "0.0.0.0", "--port", "8051"]
