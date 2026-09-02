@@ -16,7 +16,9 @@ def list_knowledge(db: Session = Depends(get_session), user: User = Depends(requ
 
 @router.post("/", response_model=KnowledgeOut)
 def create_knowledge(body: KnowledgeIn, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "developer", "leader"))):
-    k = Knowledge(**body.model_dump())
+    data = body.model_dump()
+    data["author_id"] = user.id
+    k = Knowledge(**data)
     db.add(k)
     db.commit()
     db.refresh(k)

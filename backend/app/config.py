@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     seed_group_name: str = "技术组"
     # P0.5 日志级别（.env 可覆盖）
     log_level: str = "INFO"
+    # P1.1 统一登录：共享 Cookie 域（iframe 子系统共享登录态，需同父域）
+    cookie_domain: str = ""          # 例如 .yourdomain.com；留空=当前域(开发)
+    cookie_secure: bool = False       # 生产 HTTPS 置 True
+    cookie_name: str = "yika_access"
 
 
 settings = Settings()

@@ -14,13 +14,16 @@ class LoginIn(BaseModel):
 
 class TokenOut(BaseModel):
     token: str
+    refresh: str = ""
     role: str
 
 
 class CustomerIn(BaseModel):
     name: str
     industry: str = ""
-    contact: str = ""
+    scale: str = ""
+    main_business: str = ""
+    group_id: int | None = None
 
 
 class CustomerOut(CustomerIn):
@@ -58,8 +61,9 @@ class TransitionIn(BaseModel):
 
 class KnowledgeIn(BaseModel):
     title: str
-    content: str
-    source: str = "manual"
+    body: str = ""
+    tags: list[str] = []
+    source_enum: str = "manual"
 
 
 class KnowledgeOut(KnowledgeIn):

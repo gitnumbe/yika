@@ -10,6 +10,10 @@ from .core.logging import setup_logging
 from .database import Base, SessionLocal, engine
 from .seed import seed_if_empty
 from .routers import auth, backup, customers, knowledge, notes, projects, qa, recordings, requirements, tts
+from .platform.routers import org as platform_org
+from .platform.routers import subsystems as platform_subsystems
+from .platform.routers import permissions as platform_permissions
+from .platform.routers import shared_data as platform_shared
 
 
 @asynccontextmanager
@@ -62,3 +66,7 @@ app.include_router(qa.router)
 app.include_router(recordings.router)
 app.include_router(notes.router)
 app.include_router(tts.router)
+app.include_router(platform_org.router)
+app.include_router(platform_subsystems.router)
+app.include_router(platform_permissions.router)
+app.include_router(platform_shared.router)

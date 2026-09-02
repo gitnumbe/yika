@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 
 import bcrypt
 import jwt
-from fastapi import Depends, Header, HTTPException
+from fastapi import Depends, Header, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from .config import settings
@@ -74,13 +74,15 @@ def rotate_refresh_token(raw: str, db: Session) -> str | None:
         return None
     token = db.query(RefreshToken).filter(
         RefreshToken.user_id == user_id,
-        RefreshToken.token_hash == hash_password(raw),
         RefreshToken.revoked_at.is_(None),
-    ).first()
-    if not token:
+    ).all()
+    # 用 bcrypt verify 比对（hash_password 每次 salt 不同，不能直接比对）
+    matched = next((t for t in token if verify_password(raw, t.token_hash)), None)
+    if not matched:
         return None
     # 吊销旧令牌（旋转）
-    token.revoked_at = datetime.utcnow()
+    token_to_revoke = matched
+    token_to_revoke.revoked_at = datetime.utcnow()
     db.commit()
     return create_refresh_token(user_id, db)
 
@@ -134,7 +136,14 @@ def record_login_success(db: Session, user: User) -> None:
 
 # ---------- 请求依赖 ----------
 
-def get_current_user(token: str = Header(None), db: Session = Depends(get_session)) -> User:
+def get_current_user(
+    token: str = Header(None),
+    request: Request = None,
+    db: Session = Depends(get_session),
+) -> User:
+    # 优先 header；iframe 子系统场景（或无 header）回退到共享域 Cookie
+    if not token and request is not None:
+        token = request.cookies.get(settings.cookie_name)
     if not token:
         raise HTTPException(401, "未登录")
     try:
