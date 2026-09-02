@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import models  # noqa: F401  确保模型注册到 Base.metadata
 from .config import settings
 from .database import Base, engine
-from .routers import auth, backup, customers, knowledge, notes, projects, qa, recordings, requirements
+from .routers import auth, backup, customers, knowledge, notes, projects, qa, recordings, requirements, tts
 
 app = FastAPI(title="Team Collab Agent")
 
@@ -41,5 +41,6 @@ app.include_router(backup.router)
 app.include_router(qa.router)
 app.include_router(recordings.router)
 app.include_router(notes.router)
+app.include_router(tts.router)
 
 Base.metadata.create_all(bind=engine)

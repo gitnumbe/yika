@@ -153,6 +153,8 @@ class QA(Base):
     knowledge_id: Mapped[int | None] = mapped_column(ForeignKey("knowledge.id"), nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="answered")
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    # 生产级（v2.0）：TTS 朗读缓存
+    tts_audio_path: Mapped[str] = mapped_column(String(300), default="")
 
 
 class LearningTask(Base):

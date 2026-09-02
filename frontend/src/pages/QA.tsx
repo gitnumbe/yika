@@ -2,9 +2,11 @@ import { useState } from "react";
 import Layout from "../components/Layout";
 import { apiFetch } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { useTTS } from "../hooks/useTTS";
 
 export default function QA() {
   const { role } = useAuth();
+  const { speak, loading } = useTTS();
   const [q, setQ] = useState("");
   const [result, setResult] = useState<any>(null);
 
@@ -53,6 +55,15 @@ export default function QA() {
               <h3>AI 回答</h3>
               <p style={{ color: "#fff", lineHeight: 1.7 }}>{result.answer}</p>
               <p className="gate-muted">来源：{result.source} · 置信度 {(result.confidence ?? 0).toFixed(2)}</p>
+              {result.id && result.answer && (
+                <button
+                  className="gate-btn gate-btn-ghost"
+                  onClick={() => speak(`/qa/${result.id}/tts`)}
+                  disabled={loading}
+                >
+                  {loading ? "合成中…" : "🔊 朗读回答"}
+                </button>
+              )}
             </>
           )}
         </div>

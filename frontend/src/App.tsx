@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import Requirements from "./pages/Requirements";
 import Knowledge from "./pages/Knowledge";
+import Notes from "./pages/Notes";
 import QA from "./pages/QA";
 
 function Guard({ children }: { children: JSX.Element }) {
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Guard><Dashboard /></Guard>} />
           <Route path="/projects" element={<Guard><Projects /></Guard>} />
+          <Route path="/notes" element={<Guard><Notes /></Guard>} />
           <Route path="/requirements" element={<Guard><Requirements /></Guard>} />
           <Route path="/knowledge" element={<Guard><Knowledge /></Guard>} />
           <Route path="/qa" element={<Guard><QA /></Guard>} />

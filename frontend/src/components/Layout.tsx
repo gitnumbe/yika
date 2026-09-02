@@ -28,6 +28,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <nav className="gate-nav">
           <NavLink to="/" end>工作台</NavLink>
           <NavLink to="/projects">项目</NavLink>
+          <NavLink to="/notes">笔记</NavLink>
           <NavLink to="/requirements">需求</NavLink>
           <NavLink to="/knowledge">知识库</NavLink>
           <NavLink to="/qa">答疑</NavLink>

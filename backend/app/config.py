@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     secret_key: str = "change-me"
     # CORS 白名单（逗号分隔；生产必配）
     cors_origins: str = ""
+    # 文件存储根目录（录音/TTS 产物）
+    storage_root: str = "storage"
 
 
 settings = Settings()
