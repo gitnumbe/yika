@@ -9,7 +9,7 @@ def _token(client, username, role):
 
 
 def test_export_requires_admin(client):
-    t = _token(client, "tech1", "tech")
+    t = _token(client, "tech1", "developer")
     r = client.get("/backup/export", headers={"token": t})
     assert r.status_code == 403
     a = _token(client, "admin1", "admin")

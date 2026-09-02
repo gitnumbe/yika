@@ -11,7 +11,7 @@ router = APIRouter(prefix="/requirements", tags=["requirements"])
 
 
 @router.post("/")
-def create_requirement(body: RequirementIn, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "tech", "instructor"))):
+def create_requirement(body: RequirementIn, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "developer", "instructor", "leader"))):
     r = Requirement(**body.model_dump(), author_id=user.id)
     db.add(r)
     db.commit()
@@ -20,12 +20,12 @@ def create_requirement(body: RequirementIn, db: Session = Depends(get_session), 
 
 
 @router.get("/")
-def list_requirements(db: Session = Depends(get_session), user: User = Depends(require_role("admin", "tech", "instructor"))):
+def list_requirements(db: Session = Depends(get_session), user: User = Depends(require_role("admin", "developer", "instructor", "leader"))):
     return [{"id": r.id, "title": r.title, "status": r.status.value, "project_id": r.project_id} for r in db.query(Requirement).all()]
 
 
 @router.post("/{req_id}/transition")
-def transition_requirement(req_id: int, body: TransitionIn, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "tech"))):
+def transition_requirement(req_id: int, body: TransitionIn, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "developer", "leader"))):
     r = db.get(Requirement, req_id)
     if not r:
         raise HTTPException(404, "需求不存在")

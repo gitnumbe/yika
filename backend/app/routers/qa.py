@@ -11,7 +11,7 @@ router = APIRouter(prefix="/qa", tags=["qa"])
 
 
 @router.post("/ask")
-def ask(body: QAAsk, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "tech", "instructor"))):
+def ask(body: QAAsk, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "developer", "instructor", "leader"))):
     result = qa_service.answer(db, body.question)
     qa = QA(question=body.question, answer=result["answer"], status="answered" if not result["needs_human"] else "pending", author_id=user.id)
     db.add(qa)
@@ -21,7 +21,7 @@ def ask(body: QAAsk, db: Session = Depends(get_session), user: User = Depends(re
 
 
 @router.post("/{qa_id}/answer")
-def answer_question(qa_id: int, body: QAAnswerIn, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "tech"))):
+def answer_question(qa_id: int, body: QAAnswerIn, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "developer", "leader"))):
     qa = db.get(QA, qa_id)
     if not qa:
         raise HTTPException(404, "问题不存在")

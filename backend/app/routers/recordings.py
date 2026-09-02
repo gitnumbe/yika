@@ -21,7 +21,7 @@ def upload(
     project_id: int | None = Form(None),
     scene: str = Form("internal"),
     db: Session = Depends(get_session),
-    user: User = Depends(require_role("admin", "tech", "instructor")),
+    user: User = Depends(require_role("admin", "developer", "instructor", "leader")),
 ):
     path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4().hex}.webm")
     with open(path, "wb") as f:
@@ -35,7 +35,7 @@ def upload(
 
 
 @router.get("/{rec_id}/status")
-def status(rec_id: int, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "tech", "instructor"))):
+def status(rec_id: int, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "developer", "instructor", "leader"))):
     rec = db.get(Recording, rec_id)
     if not rec:
         return {"error": "not found"}

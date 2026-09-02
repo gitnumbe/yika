@@ -9,7 +9,7 @@ def _token(client, username, role):
 
 
 def test_ask_hits_knowledge(client):
-    t = _token(client, "tech1", "tech")
+    t = _token(client, "tech1", "developer")
     h = {"token": t}
     client.post("/knowledge/", json={"title": "什么是agent", "content": "agent是能自主执行任务的AI"}, headers=h)
     r = client.post("/qa/ask", json={"question": "什么是agent"}, headers=h)
@@ -24,7 +24,7 @@ def test_ask_no_hit_marks_pending(client):
 
 
 def test_tech_answer_reflows_to_knowledge(client):
-    t = _token(client, "tech1", "tech")
+    t = _token(client, "tech1", "developer")
     h = {"token": t}
     qid = client.post("/qa/ask", json={"question": "如何部署agent"}, headers=h).json()["id"]
     client.post(f"/qa/{qid}/answer", json={"answer": "部署步骤是..."}, headers=h)

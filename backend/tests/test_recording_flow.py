@@ -60,7 +60,7 @@ def test_recording_to_requirement_closed_loop(client, monkeypatch):
     monkeypatch.setattr(note_gen_module, "get_llm", lambda: FakeNoteLLM())
     monkeypatch.setattr(req_extract_module, "get_llm", lambda: FakeReqLLM())
 
-    tech_token = _register(client, "技术录音1", "tech")
+    tech_token = _register(client, "技术录音1", "developer")
     th = {"token": tech_token}
 
     # 1. 上传录音（后台线程异步处理）
@@ -121,7 +121,7 @@ def test_extract_does_not_persist_without_confirm(client, monkeypatch):
 
     monkeypatch.setattr(req_extract_module, "get_llm", lambda: FakeReqLLM())
 
-    tech_token = _register(client, "技术录音2", "tech")
+    tech_token = _register(client, "技术录音2", "developer")
     th = {"token": tech_token}
 
     r = client.post("/notes/99999/extract", headers=th)

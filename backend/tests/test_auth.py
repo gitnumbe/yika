@@ -15,6 +15,6 @@ def test_register_login(client):
 
 
 def test_login_wrong_password(client):
-    client.post("/auth/register", json={"username": "bob", "password": "pw", "role": "tech"})
+    client.post("/auth/register", json={"username": "bob", "password": "pw", "role": "developer"})
     r = client.post("/auth/login", json={"username": "bob", "password": "wrong"})
     assert r.status_code == 401

@@ -69,7 +69,7 @@ def _synthesize(note: Note, text: str) -> str:
 
 
 @router.post("/notes/{note_id}/tts")
-def note_tts(note_id: int, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "tech", "instructor"))):
+def note_tts(note_id: int, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "developer", "instructor", "leader"))):
     """朗读笔记：懒合成 + 缓存。返回 {audio_url, cached, source}。"""
     note = db.get(Note, note_id)
     if not note:
@@ -91,7 +91,7 @@ def note_tts(note_id: int, db: Session = Depends(get_session), user: User = Depe
 
 
 @router.post("/qa/{qa_id}/tts")
-def qa_tts(qa_id: int, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "tech", "instructor"))):
+def qa_tts(qa_id: int, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "developer", "instructor", "leader"))):
     """朗读答疑回答：懒合成 + 缓存。"""
     qa = db.get(QA, qa_id)
     if not qa:
@@ -121,7 +121,7 @@ def qa_tts(qa_id: int, db: Session = Depends(get_session), user: User = Depends(
 
 
 @router.get("/tts/wav/{name}")
-def serve_wav(name: str, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "tech", "instructor"))):
+def serve_wav(name: str, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "developer", "instructor", "leader"))):
     """取已合成的 wav 文件（MIME audio/wav，可 <audio> 播放）。"""
     # 防路径穿越：仅允许合法文件名
     if not re.match(r"^(note|qa)_\d+\.wav$", name):

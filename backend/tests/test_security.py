@@ -4,7 +4,7 @@ import pytest
 pytestmark = pytest.mark.l2
 
 
-def _register(client, username, role="tech"):
+def _register(client, username, role="developer"):
     client.post("/auth/register", json={"username": username, "password": "pw", "role": role})
 
 

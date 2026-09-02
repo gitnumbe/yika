@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     cors_origins: str = ""
     # 文件存储根目录（录音/TTS 产物）
     storage_root: str = "storage"
+    # P0.3 种子数据（.env 可覆盖；未配置用默认，仅开发/首启用）
+    seed_admin_username: str = "admin"
+    seed_admin_password: str = "admin123"
+    seed_group_name: str = "技术组"
+    # P0.5 日志级别（.env 可覆盖）
+    log_level: str = "INFO"
 
 
 settings = Settings()

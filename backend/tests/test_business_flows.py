@@ -19,7 +19,7 @@ def _register(client, username, role):
 def test_requirement_full_lifecycle(client):
     """需求从草稿到交付的完整闭环，覆盖所有关键状态。"""
     inst_token = _register(client, "讲师小A", "instructor")
-    tech_token = _register(client, "技术小B", "tech")
+    tech_token = _register(client, "技术小B", "developer")
     ih = {"token": inst_token}
     th = {"token": tech_token}
 
@@ -45,7 +45,7 @@ def test_requirement_full_lifecycle(client):
 def test_requirement_adjust_and_reopen_closed_loop(client):
     """需求「信息待补充 → 重提 → 不可行 → 重新评估 → 交付」的闭环。"""
     inst_token = _register(client, "讲师C", "instructor")
-    tech_token = _register(client, "技术D", "tech")
+    tech_token = _register(client, "技术D", "developer")
     ih = {"token": inst_token}
     th = {"token": tech_token}
 
@@ -74,7 +74,7 @@ def test_requirement_adjust_and_reopen_closed_loop(client):
 def test_qa_knowledge_flywheel_closed_loop(client):
     """验证答疑 agent 的「越用越厚」飞轮：未命中 → 转技术 → 回流 → 下次命中。"""
     inst_token = _register(client, "讲师E", "instructor")
-    tech_token = _register(client, "技术F", "tech")
+    tech_token = _register(client, "技术F", "developer")
     ih = {"token": inst_token}
     th = {"token": tech_token}
 
@@ -95,7 +95,7 @@ def test_qa_knowledge_flywheel_closed_loop(client):
 def test_qa_answer_reflow_persists_across_questions(client):
     """技术人员作答后，知识库新增条目，且能被讲师检索到。"""
     inst_token = _register(client, "讲师G", "instructor")
-    tech_token = _register(client, "技术H", "tech")
+    tech_token = _register(client, "技术H", "developer")
     ih = {"token": inst_token}
     th = {"token": tech_token}
 
@@ -113,7 +113,7 @@ def test_qa_answer_reflow_persists_across_questions(client):
 def test_role_permission_boundary_closed_loop(client):
     """验证权限边界贯穿整个流程：讲师不能做技术才能做的事。"""
     inst_token = _register(client, "讲师I", "instructor")
-    tech_token = _register(client, "技术J", "tech")
+    tech_token = _register(client, "技术J", "developer")
     ih = {"token": inst_token}
     th = {"token": tech_token}
 

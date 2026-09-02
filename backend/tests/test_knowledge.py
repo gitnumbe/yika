@@ -9,7 +9,7 @@ def _token(client, username, role):
 
 
 def test_tech_create_instructor_read(client):
-    t = _token(client, "tech1", "tech")
+    t = _token(client, "tech1", "developer")
     client.post("/knowledge/", json={"title": "agent 基础", "content": "..."}, headers={"token": t})
     i = _token(client, "inst1", "instructor")
     r = client.get("/knowledge/", headers={"token": i})

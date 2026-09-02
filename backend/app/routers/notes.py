@@ -37,12 +37,12 @@ def _note_dict(n: Note) -> dict:
 
 
 @router.get("/")
-def list_notes(db: Session = Depends(get_session), user: User = Depends(require_role("admin", "tech", "instructor"))):
+def list_notes(db: Session = Depends(get_session), user: User = Depends(require_role("admin", "developer", "instructor", "leader"))):
     return [_note_dict(n) for n in db.query(Note).order_by(Note.created_at.desc()).all()]
 
 
 @router.post("/{note_id}/extract")
-def extract(note_id: int, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "tech", "instructor"))):
+def extract(note_id: int, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "developer", "instructor", "leader"))):
     note = db.get(Note, note_id)
     if not note:
         raise HTTPException(404, "笔记不存在")
@@ -51,7 +51,7 @@ def extract(note_id: int, db: Session = Depends(get_session), user: User = Depen
 
 
 @router.post("/{note_id}/confirm-requirements")
-def confirm(note_id: int, body: ConfirmRequirements, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "tech", "instructor"))):
+def confirm(note_id: int, body: ConfirmRequirements, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "developer", "instructor", "leader"))):
     note = db.get(Note, note_id)
     if not note:
         raise HTTPException(404, "笔记不存在")
