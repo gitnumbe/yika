@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     cookie_domain: str = ""          # 例如 .yourdomain.com；留空=当前域(开发)
     cookie_secure: bool = False       # 生产 HTTPS 置 True
     cookie_name: str = "yika_access"
+    # P1.6 事件总线：RabbitMQ topic 广播
+    rabbitmq_url: str = "amqp://guest:guest@127.0.0.1:5672/"
+    rabbitmq_exchange: str = "yika.events"
 
 
 settings = Settings()

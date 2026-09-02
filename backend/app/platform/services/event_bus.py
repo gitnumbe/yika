@@ -63,6 +63,34 @@ class InMemoryBackend:
         pass  # 内存 backend 发布即完成，消费由 dispatcher.dispatch 驱动
 
 
+class RabbitMqBackend:
+    """真实 RabbitMQ topic 广播 backend（S6，生产）。"""
+
+    def __init__(self, url: str, exchange: str):
+        import pika
+        self._url = url
+        self._exchange = exchange
+        # 声明 topic exchange（幂等：已存在则忽略）
+        conn = pika.BlockingConnection(pika.URLParameters(url))
+        ch = conn.channel()
+        ch.exchange_declare(exchange=exchange, exchange_type="topic", durable=True)
+        conn.close()
+
+    def publish(self, event: Event) -> None:
+        import pika
+        conn = pika.BlockingConnection(pika.URLParameters(self._url))
+        ch = conn.channel()
+        ch.exchange_declare(exchange=self._exchange, exchange_type="topic", durable=True)
+        body = __import__("json").dumps({
+            "type": event.type, "entity": event.entity, "entity_id": event.entity_id,
+            "actor": event.actor, "at": event.at,
+        }, ensure_ascii=False).encode()
+        # topic 路由 key = event.type（如 requirement.delivered）
+        ch.basic_publish(exchange=self._exchange, routing_key=event.type, body=body,
+                         properties=pika.BasicProperties(content_type="application/json"))
+        conn.close()
+
+
 class InMemoryIdempotencyStore:
     """幂等去重（内存实现，开发/测试）。生产可换 DB/Redis。"""
 
@@ -76,8 +104,18 @@ class InMemoryIdempotencyStore:
         self._keys.add(key)
 
 
-# 平台级单例
-dispatcher = EventDispatcher()
+# 平台级单例：优先真实 RabbitMQ，不可用(未装pika/未起服务)则回退内存
+from ...config import settings as _settings
+
+
+def _make_backend():
+    try:
+        return RabbitMqBackend(_settings.rabbitmq_url, _settings.rabbitmq_exchange)
+    except Exception:
+        return InMemoryBackend()
+
+
+dispatcher = EventDispatcher(backend=_make_backend())
 
 
 def publish_event(type_: str, entity: str, entity_id: int | str, actor: str = "") -> Event:
