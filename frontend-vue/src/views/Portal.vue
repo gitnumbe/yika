@@ -21,6 +21,13 @@
     </header>
 
     <main class="portal-main">
+      <!-- 界面级权限提示：仅 admin 可见「管理后台」（由 /permissions/mine 的 can_manage_org 驱动） -->
+      <div class="portal-actions" v-if="auth.permissions?.can_manage_org">
+        <el-button type="primary" plain @click="router.push('/admin')">
+          <el-icon><Setting /></el-icon>&nbsp;管理后台
+        </el-button>
+      </div>
+
       <section class="subsys-grid">
         <!-- 子系统图标墙：按当前角色过滤（由 /subsystems/mine 提供） -->
         <el-card
@@ -93,6 +100,7 @@ function onUserCmd(cmd: string) {
 
 onMounted(async () => {
   await auth.fetchMe()
+  await auth.fetchPermissions()
   await loadSubsystems()
 })
 </script>
@@ -116,6 +124,7 @@ onMounted(async () => {
 .user-name { color: var(--text); font-size: 14px; }
 .role-tag { color: var(--text2); }
 .portal-main { max-width: 1080px; margin: 0 auto; padding: 24px; }
+.portal-actions { margin-bottom: 16px; display: flex; justify-content: flex-end; }
 .subsys-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));

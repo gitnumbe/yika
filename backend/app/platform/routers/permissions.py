@@ -30,5 +30,5 @@ def my_permissions(db: Session = Depends(get_session), user: User = Depends(get_
         "can_deliver": role in ("developer", "leader"),          # 开发/组长交付
         "can_manage_org": role == "admin",                       # 组织管理
         "can_manage_subsystem": role == "admin",                 # 子系统管理
-        "can_write_knowledge": role in ("admin", "developer", "leader"),  # 知识写入
+        "can_write_knowledge": role in ("developer", "leader"),  # 知识写入(开发直接发/讲师需审); admin 不写
     }

@@ -69,14 +69,22 @@ def submit_for_review(req_id: int, db: Session = Depends(get_session), user: Use
 
 @router.post("/{req_id}/transition", response_model=RequirementOut)
 def transition_requirement(req_id: int, body: TransitionIn, db: Session = Depends(get_session),
-                           user: User = Depends(require_role("admin", "leader"))):
-    """状态流转。评审类跳转(待评审→可行/需调整/不可行) = 组长专属；开发中→已交付可组长/admin。"""
+                           user: User = Depends(require_role("admin", "leader", "developer", "instructor"))):
+    """状态流转。
+    - 评审拍板(待评审→可行/需调整/不可行) = 组长专属（admin 不评审业务，讲师/开发不可）
+    - 开发/交付(→开发中/已交付) = 开发/组长/admin 可做（矩阵第58行）
+    - 讲师提交后的重提(→待评审) 允许作者；此处 transition 由查到需提交走 submit。
+    """
     r = _get_or_404(db, req_id, user)
     to = ReqStatus(body.to)
-    # 评审拍板：仅组长（admin 不评审业务）；其余跳转组长/admin
+    # 评审拍板：仅组长（admin 不评审业务）
     if to in (ReqStatus.feasible, ReqStatus.infeasible, ReqStatus.info_needed, ReqStatus.plan_needed):
-        if user.role.value != "leader" and user.role.value != "admin":
+        if user.role.value != "leader":
             raise HTTPException(403, "仅组长可评审需求")
+    # 开发/交付跳转：开发可做；讲师不可做开发类
+    elif to in (ReqStatus.in_dev, ReqStatus.delivered):
+        if user.role.value == "instructor":
+            raise HTTPException(403, "讲师不能推进开发/交付")
     _do_transition(db, r, to, body.reason, user)
     return _out(r)
 
