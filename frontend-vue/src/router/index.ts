@@ -11,6 +11,8 @@ const routes = [
   { path: '/projects', component: () => import('../views/business/Projects.vue') },
   { path: '/requirements', component: () => import('../views/business/Requirements.vue') },
   { path: '/knowledge', component: () => import('../views/business/Knowledge.vue') },
+  { path: '/notes', component: () => import('../views/business/Notes.vue') },
+  { path: '/qa', component: () => import('../views/business/Qa.vue') },
 ]
 
 const router = createRouter({

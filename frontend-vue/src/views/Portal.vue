@@ -81,18 +81,20 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import api from '../api/client'
-import { OfficeBuilding, FolderOpened, List, Reading } from '@element-plus/icons-vue'
+import { OfficeBuilding, FolderOpened, List, Reading, Microphone, ChatDotRound } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const auth = useAuthStore()
 const subsystems = ref<any[]>([])
 
-// P7a 业务入口（手动流）
+// P7a/P7b 业务入口
 const bizEntries = [
   { path: '/customers', name: '客户管理', desc: '客户档案·A1 建档', icon: OfficeBuilding, color: '#3370ff', bg: '#ecf3ff' },
   { path: '/projects', name: '项目管理', desc: '项目与需求', icon: FolderOpened, color: '#12a15a', bg: '#e8f7ef' },
   { path: '/requirements', name: '需求管理', desc: '状态机·组长评审', icon: List, color: '#ff7d00', bg: '#fff3e6' },
-  { path: '/knowledge', name: '知识库', desc: '全平台共享知识', icon: Reading, color: '#8a2be2', bg: '#f3ecff' },
+  { path: '/knowledge', name: '知识库', desc: '全平台共享', icon: Reading, color: '#8a2be2', bg: '#f3ecff' },
+  { path: '/notes', name: '录音笔记', desc: '录音·A6笔记·A3候选', icon: Microphone, color: '#e2554f', bg: '#fdeeee' },
+  { path: '/qa', name: '智能答疑', desc: 'A4问答带引用', icon: ChatDotRound, color: '#0e8f86', bg: '#e6f7f5' },
 ]
 
 const user = computed(() => auth.user)
