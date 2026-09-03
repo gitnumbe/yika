@@ -5,17 +5,8 @@
 2. 音频转码失败（AudioTranscodeError）→ 上行给任务层标记 transcode_failed。
 3. 需求提炼（req_extract）不在流水线里自动跑，而是由用户在笔记上手动触发（防幻觉铁律）。
 """
-import json
-
-from ..models import Note, Recording
+from ..models import Note, Project, Recording
 from . import asr, audio, denoise, note_gen
-
-
-def _json_of(value) -> str:
-    """list/dict → JSON 字符串（Note 的 points/decisions/todos 为 Text 字段）。"""
-    if isinstance(value, str):
-        return value
-    return json.dumps(value, ensure_ascii=False)
 
 
 def process_recording(db, recording_id: int) -> None:
@@ -48,19 +39,29 @@ def process_recording(db, recording_id: int) -> None:
         # 笔记降级也落库，但记录 quality 便于前端提示"AI 降级"
         pass
 
-    note = Note(
-        project_id=rec.project_id,
-        scene=rec.scene,
-        transcript=denoise_result["text"],
-        author_id=rec.author_id,
-        summary=note_data.get("summary", "") or "",
-        points=_json_of(note_data.get("points", [])),
-        decisions=_json_of(note_data.get("decisions", [])),
-        todos=_json_of(note_data.get("todos", [])),
-    )
-    db.add(note)
-    db.commit()
-    db.refresh(note)
+    # v3：Note 挂在 customer 下（customer_id/group_id），归属从录音所在 project 解析。
+    # A6 四块结构化写入 ai_structured（JSON），quality 写入 quality_flags。
+    # 录音未关联 project（无法解析客户/组上下文）时跳过落 Note，不阻塞转写完成。
+    project = db.get(Project, rec.project_id) if rec.project_id else None
+    if project:
+        note = Note(
+            customer_id=project.customer_id,
+            group_id=project.group_id,
+            scenario=rec.scene or "req_discussion",
+            transcript=denoise_result["text"],
+            audio_path=rec.audio_path or "",
+            ai_structured={
+                "summary": note_data.get("summary", "") or "",
+                "points": note_data.get("points", []) or [],
+                "decisions": note_data.get("decisions", []) or [],
+                "todos": note_data.get("todos", []) or [],
+            },
+            quality_flags=note_data.get("quality", {}) or {},
+            note_author_id=rec.author_id,
+        )
+        db.add(note)
+        db.commit()
+        db.refresh(note)
 
     # 4. 完成
     rec.status = "done"

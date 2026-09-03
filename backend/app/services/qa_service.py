@@ -25,8 +25,9 @@ def _search_knowledge(db, question: str):
     if not q_grams:
         return None, 0
     best, best_score = None, 0
-    for k in db.query(Knowledge).all():
-        k_grams = _tokenize(k.title + " " + k.content)
+    # 仅检索已发布知识（审核中 draft 不用于答疑）
+    for k in db.query(Knowledge).filter(Knowledge.status == "published").all():
+        k_grams = _tokenize(k.title + " " + k.body)
         if not k_grams:
             continue
         score = len(q_grams & k_grams) / len(q_grams)  # 覆盖率 0-1
@@ -40,7 +41,7 @@ def answer(db, question: str) -> dict:
     hit, score = _search_knowledge(db, question)
     if hit:
         return {
-            "answer": hit.content,
+            "answer": hit.body,
             "source": hit.title,
             "confidence": round(score, 2),
             "needs_human": False,

@@ -198,6 +198,9 @@ class Knowledge(Base):
     source_enum: Mapped[str] = mapped_column(String(20), default="manual")  # manual/ai_extract
     source_ref_id: Mapped[str] = mapped_column(String(200), default="")
     group_scope: Mapped[str] = mapped_column(String(20), default="global")  # 全平台共通
+    status: Mapped[str] = mapped_column(String(20), default="published")  # P3.5: draft待审核/published已发布
+    reviewer_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)  # 审核人
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     author_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

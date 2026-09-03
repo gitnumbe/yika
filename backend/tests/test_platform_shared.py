@@ -23,11 +23,11 @@ def _login(client, username, password="admin123"):
     return client.post("/auth/login", json={"username": username, "password": password}).json()["token"]
 
 
-def _mk_group_and_user(client, admin, prefix):
+def _mk_group_and_user(client, admin, prefix, role="instructor"):
     gid = client.post("/org/groups", json={"name": f"{prefix}_{uuid.uuid4().hex[:5]}"},
                       headers={"token": admin}).json()["id"]
     client.post("/org/users", json={"username": prefix, "password": "pw123456",
-                                    "role": "instructor", "group_ids": [gid]},
+                                    "role": role, "group_ids": [gid]},
                 headers={"token": admin})
     return gid
 
@@ -53,11 +53,12 @@ def test_shared_customers_group_isolation(client):
 
 def test_shared_knowledge_all_groups(client):
     admin = _login(client, "admin")
-    _mk_group_and_user(client, admin, "知A")
+    _mk_group_and_user(client, admin, "知A", role="developer")  # A 组开发能直接发布知识
     _mk_group_and_user(client, admin, "知B")
-    # admin 写入一条知识（全平台共通）
+    ta = _login(client, "知A", "pw123456")
+    # A 组开发写一条知识（全平台共通；published 直接入）
     client.post("/knowledge/", json={"title": "共享知识条", "body": "内容"},
-                headers={"token": admin})
+                headers={"token": ta})
     tb = _login(client, "知B", "pw123456")
     kb = client.get("/api/shared/knowledge", headers={"token": tb}).json()
     assert any(k["title"] == "共享知识条" for k in kb)  # 跨组可见

@@ -5,7 +5,6 @@
 - 再次朗读 → 直接返回已缓存 wav（校验文件存在）
 - TTS 服务不可用 → 503（前端降级为纯文字展示，不阻塞主流程）
 """
-import json
 import os
 import re
 
@@ -32,26 +31,22 @@ def _tts_storage_dir() -> str:
 
 
 def _read_note_text(n: Note) -> str:
-    """从笔记拼朗读文本：摘要 + 要点（points/decisions/todos 为 JSON 字符串，解析取纯文本）。"""
+    """从笔记拼朗读文本（v3）：摘要 + 要点，读 A6 结构化 ai_structured 四块。"""
+    ai = n.ai_structured or {}
     parts = []
-    if n.summary:
-        parts.append(n.summary)
-    for f in ("points", "decisions", "todos"):
-        v = getattr(n, f, "")
-        if not isinstance(v, str) or not v.strip():
-            continue
-        try:
-            items = json.loads(v)
-        except (json.JSONDecodeError, TypeError):
-            items = [v]  # 旧数据纯文本
-        if isinstance(items, list):
-            for it in items:
-                if isinstance(it, dict):
-                    parts.append(str(it.get("detail") or it.get("item") or it.get("content") or ""))
-                else:
-                    parts.append(str(it))
-        elif isinstance(items, str):
-            parts.append(items)
+    if ai.get("summary"):
+        parts.append(str(ai["summary"]))
+    for key in ("points", "decisions", "todos"):
+        items = ai.get(key) or []
+        if isinstance(items, dict):
+            items = [items]
+        if isinstance(items, str):
+            items = [items]
+        for it in items:
+            if isinstance(it, dict):
+                parts.append(str(it.get("detail") or it.get("item") or it.get("content") or ""))
+            else:
+                parts.append(str(it))
     return "。".join(p for p in parts if p)
 
 
@@ -70,7 +65,7 @@ def _synthesize(note: Note, text: str) -> str:
 
 @router.post("/notes/{note_id}/tts")
 def note_tts(note_id: int, db: Session = Depends(get_session), user: User = Depends(require_role("admin", "developer", "instructor", "leader"))):
-    """朗读笔记：懒合成 + 缓存。返回 {audio_url, cached, source}。"""
+    """朗读笔记：懒合成 + 缓存（v3 Note 无 audio_tts_path 列，缓存靠确定性文件名 note_{id}.wav 是否存在判定）。返回 {audio_url, cached, source}。"""
     note = db.get(Note, note_id)
     if not note:
         raise HTTPException(404, "笔记不存在")
@@ -78,15 +73,12 @@ def note_tts(note_id: int, db: Session = Depends(get_session), user: User = Depe
     if not text.strip():
         raise HTTPException(400, "笔记无可朗读内容")
 
-    # 已有缓存且文件存在 → 复用
-    if note.audio_tts_path:
-        cached = os.path.join(STORAGE_ROOT, note.audio_tts_path)
-        if os.path.exists(cached):
-            return {"audio_url": f"/tts/wav/{note.audio_tts_path}", "cached": True, "source": "note"}
+    fname = f"note_{note.id}.wav"
+    cached = os.path.join(STORAGE_ROOT, "tts", fname)
+    if os.path.exists(cached):
+        return {"audio_url": f"/tts/wav/{fname}", "cached": True, "source": "note"}
 
-    fname = _synthesize(note, text)
-    note.audio_tts_path = f"tts/{fname}"
-    db.commit()
+    _synthesize(note, text)
     return {"audio_url": f"/tts/wav/{fname}", "cached": False, "source": "note"}
 
 

@@ -30,8 +30,8 @@ def shared_customers(db: Session = Depends(get_session), user: User = Depends(ge
 
 @router.get("/knowledge")
 def shared_knowledge(db: Session = Depends(get_session), user: User = Depends(get_current_user)):
-    """全平台知识（共通，无组隔离）。供子系统读取。"""
-    items = db.query(Knowledge).all()
+    """全平台正式知识（仅 published；审核中 draft 不对外）。"""
+    items = db.query(Knowledge).filter(Knowledge.status == "published").all()
     return [{"id": k.id, "title": k.title, "body": k.body} for k in items]
 
 

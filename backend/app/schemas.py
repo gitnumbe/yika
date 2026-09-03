@@ -28,30 +28,47 @@ class CustomerIn(BaseModel):
 
 class CustomerOut(CustomerIn):
     id: int
+    source: str = "manual"
     model_config = {"from_attributes": True}
 
 
 class ProjectIn(BaseModel):
     name: str
     customer_id: int
+    description: str = ""
 
 
-class ProjectOut(BaseModel):
+class ProjectOut(ProjectIn):
     id: int
-    name: str
-    customer_id: int
-    status: str
+    group_id: int
+    status: str = "planned"
     model_config = {"from_attributes": True}
 
 
-class RequirementIn(BaseModel):
+
+class RequirementCreate(BaseModel):
     title: str
     description: str = ""
-    source: str = "manual"
-    source_ref: str = ""
     project_id: int | None = None
-    customer_id: int | None = None
-    priority: int = 0
+    source: str = "manual"          # manual / ai_extract
+    priority: str = "med"           # low/med/high
+    source_note_id: int | None = None   # P3.4 溯源到候选需求来源记录
+    ai_confidence: float | None = None  # A3 置信度
+
+
+class RequirementOut(BaseModel):
+    id: int
+    title: str
+    description: str = ""
+    status: str = "draft"
+    project_id: int
+    group_id: int
+    source: str = "manual"
+    source_note_id: int | None = None
+    priority: str = "med"
+    infeasible_reason: str = ""
+    review_conclusion: str = ""
+    ai_confidence: float | None = None
 
 
 class TransitionIn(BaseModel):
@@ -68,6 +85,8 @@ class KnowledgeIn(BaseModel):
 
 class KnowledgeOut(KnowledgeIn):
     id: int
+    status: str = "published"
+    reviewer_id: int | None = None
     model_config = {"from_attributes": True}
 
 

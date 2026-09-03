@@ -28,7 +28,7 @@ def answer_question(qa_id: int, body: QAAnswerIn, db: Session = Depends(get_sess
     qa.answer = body.answer
     qa.status = "answered"
     # 回流知识库
-    k = Knowledge(title=qa.question[:50], content=body.answer, source="qa")
+    k = Knowledge(title=qa.question[:50], body=body.answer, source_enum="qa")
     db.add(k)
     db.flush()
     qa.knowledge_id = k.id
