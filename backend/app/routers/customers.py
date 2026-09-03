@@ -111,3 +111,35 @@ def import_customers(body: CustomerImportIn, db: Session = Depends(get_session),
     for c in out:
         db.refresh(c)
     return out
+
+
+@router.post("/{cid}/analyze")
+def analyze_customer(cid: int, db: Session = Depends(get_session),
+                     user: User = Depends(require_role("admin", "developer", "instructor", "leader"))):
+    """P7a.1 A1 客户画像建档：AI 检索整理结构化工商业档案。
+
+    防幻觉：AI 结果写入 ai_flags/ai_status（不覆盖人工填的字段），
+    存疑字段由前端/用户在详情看到待确认（A1 底线·关键字段命中≥85%）。
+    """
+    c = _get_or_404(db, cid, user)
+    from ..core.ai import profile  # 延迟导入
+    try:
+        res = profile.analyze(c.name)
+    except Exception as e:  # noqa: BLE001
+        c.ai_status = "failed"
+        db.commit()
+        raise HTTPException(502, f"A1 分析失败: {type(e).__name__}: {e}")
+
+    ai = res.get("profile", {})
+    # 存 AI 结果到 ai_flags（保留人工已填字段不动），标记 ai_status
+    c.ai_flags = [{
+        "industry": ai.get("industry", ""),
+        "scale": ai.get("scale", ""),
+        "main_business": ai.get("main_business", ""),
+        "background": ai.get("background", ""),
+        "website": ai.get("website", ""),
+        "validation": res.get("validation", {}),
+    }]
+    c.ai_status = "done"
+    db.commit()
+    return {"customer_id": c.id, "ai_status": c.ai_status, "ai_flags": c.ai_flags}

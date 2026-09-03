@@ -29,6 +29,17 @@
       </div>
 
       <section class="subsys-grid">
+        <!-- 业务入口（P7a 手动流）：无需子系统注册，登录即可用 -->
+        <el-card v-for="b in bizEntries" :key="b.path" class="subsys-card" shadow="hover" @click="router.push(b.path)">
+          <div class="subsys-icon" :style="{ background: b.bg }">
+            <el-icon :size="26" :color="b.color"><component :is="b.icon" /></el-icon>
+          </div>
+          <div class="subsys-name">{{ b.name }}</div>
+          <div class="subsys-desc">{{ b.desc }}</div>
+        </el-card>
+      </section>
+
+      <section class="subsys-grid">
         <!-- 子系统图标墙：按当前角色过滤（由 /subsystems/mine 提供） -->
         <el-card
           v-for="s in subsystems"
@@ -70,10 +81,19 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import api from '../api/client'
+import { OfficeBuilding, FolderOpened, List, Reading } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const auth = useAuthStore()
 const subsystems = ref<any[]>([])
+
+// P7a 业务入口（手动流）
+const bizEntries = [
+  { path: '/customers', name: '客户管理', desc: '客户档案·A1 建档', icon: OfficeBuilding, color: '#3370ff', bg: '#ecf3ff' },
+  { path: '/projects', name: '项目管理', desc: '项目与需求', icon: FolderOpened, color: '#12a15a', bg: '#e8f7ef' },
+  { path: '/requirements', name: '需求管理', desc: '状态机·组长评审', icon: List, color: '#ff7d00', bg: '#fff3e6' },
+  { path: '/knowledge', name: '知识库', desc: '全平台共享知识', icon: Reading, color: '#8a2be2', bg: '#f3ecff' },
+]
 
 const user = computed(() => auth.user)
 const initial = computed(() => (auth.user?.display_name || auth.user?.username || 'U').slice(0, 1).toUpperCase())
