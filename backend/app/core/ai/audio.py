@@ -6,16 +6,25 @@
 import shutil
 import subprocess
 
+from ...config import settings
+
 
 class AudioTranscodeError(Exception):
     """转码失败（音频无效 / ffmpeg 缺失）"""
 
 
+def _find_ffmpeg() -> str:
+    """优先 .env 的 FFMPEG_PATH；否则查 PATH。找不到返回空。"""
+    if settings.ffmpeg_path:
+        return settings.ffmpeg_path
+    return shutil.which("ffmpeg") or ""
+
+
 def prepare_audio(path: str) -> bytes:
     """转码为 16kHz 单声道 WAV 并返回字节流（兼容 16k 采样率输入）。"""
-    ffmpeg = shutil.which("ffmpeg")
+    ffmpeg = _find_ffmpeg()
     if not ffmpeg:
-        raise AudioTranscodeError("ffmpeg not found in PATH")
+        raise AudioTranscodeError("ffmpeg not found in PATH or FFMPEG_PATH")
 
     # 无论输入什么格式，一律转 16kHz mono PCM WAV
     out = path + ".16k.wav"

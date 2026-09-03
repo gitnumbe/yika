@@ -11,8 +11,12 @@ class Settings(BaseSettings):
     # 去噪小模型（Ollama）
     ollama_base_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen3:4b-instruct"
-    # STT（Qwen3-ASR·决策 09）
+    # P6.2 ASR：本地 Qwen3-ASR + 第三方兜底切换（asr_provider = qwen | third_party）
     asr_base_url: str = "http://127.0.0.1:8051"
+    asr_provider: str = "qwen"
+    asr_third_party_url: str = ""
+    asr_third_party_key: str = ""
+    asr_third_party_model: str = ""
     # TTS（dots.tts·决策 09）
     tts_base_url: str = "http://127.0.0.1:8052"
     database_url: str = "sqlite:///./app.db"
@@ -34,6 +38,8 @@ class Settings(BaseSettings):
     # P1.6 事件总线：RabbitMQ topic 广播
     rabbitmq_url: str = "amqp://guest:guest@127.0.0.1:5672/"
     rabbitmq_exchange: str = "yika.events"
+    # P6 音频转码 ffmpeg 路径（.env 可配，留空=走 PATH 的 which）
+    ffmpeg_path: str = ""
 
 
 settings = Settings()

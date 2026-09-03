@@ -230,6 +230,8 @@ class LearningTask(Base):
 class Recording(Base):
     __tablename__ = "recordings"
     id: Mapped[int] = mapped_column(primary_key=True)
+    # P6.4：录音直接挂客户（不依赖 project 反查），需求可拆到该客户下不同项目
+    customer_id: Mapped[int | None] = mapped_column(ForeignKey("customers.id"), nullable=True)
     project_id: Mapped[int | None] = mapped_column(ForeignKey("projects.id"), nullable=True)
     scene: Mapped[str] = mapped_column(String(20), default="internal")
     audio_path: Mapped[str] = mapped_column(String(300), default="")

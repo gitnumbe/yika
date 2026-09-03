@@ -39,14 +39,25 @@ def process_recording(db, recording_id: int) -> None:
         # 笔记降级也落库，但记录 quality 便于前端提示"AI 降级"
         pass
 
-    # v3：Note 挂在 customer 下（customer_id/group_id），归属从录音所在 project 解析。
+    # v3：Note 挂在 customer 下（customer_id/group_id）。P6.4：录音直接挂 customer_id，
+    # 优先用它解析客户/组；无 customer 时才回退经 project 反查。
     # A6 四块结构化写入 ai_structured（JSON），quality 写入 quality_flags。
-    # 录音未关联 project（无法解析客户/组上下文）时跳过落 Note，不阻塞转写完成。
+    customer_id = rec.customer_id
+    group_id = None
     project = db.get(Project, rec.project_id) if rec.project_id else None
-    if project:
+    if customer_id:
+        from ..models import Customer
+        cust = db.get(Customer, customer_id)
+        if cust:
+            group_id = cust.group_id
+    elif project:
+        customer_id = project.customer_id
+        group_id = project.group_id
+
+    if customer_id and group_id:
         note = Note(
-            customer_id=project.customer_id,
-            group_id=project.group_id,
+            customer_id=customer_id,
+            group_id=group_id,
             scenario=rec.scene or "req_discussion",
             transcript=denoise_result["text"],
             audio_path=rec.audio_path or "",

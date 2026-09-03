@@ -31,6 +31,65 @@ def _parse_json(raw: str) -> dict | None:
         return None
 
 
+def completeness(note_data: dict) -> dict:
+    """A6 四块完整性度量（P6.3 底线：完整度 ≥80%）。
+
+    四块 = summary / points / decisions / todos。
+    每块评分规则（满分 100）：
+      summary:   非空 40 分
+      points:    ≥1 条 25 分，每条有 topic+detail 再加 5 分（上限 25 分内浮动）
+      decisions: ≥1 条 20 分，每条有 content 再加 5 分
+      todos:     ≥1 条 15 分，每条有 owner+item 再加 5 分
+    总分 = 四块得分之和，封顶 100。缺失留空字段不强行生成，如实计 0 分。
+    """
+    score = min(100, _raw_score(note_data))
+    return {
+        "score": score,             # 0-100
+        "blocks_present": _blocks_present(note_data),  # 非空块数（0-4）
+        "blocks": _block_flags(note_data),             # 每块是否非空
+        "pass": score >= 80,        # ≥80 视为完整
+    }
+
+
+def _raw_score(note_data: dict) -> int:
+    """四块原始分（bonus 可能使满分 >100，由外层 cap 到 100）。"""
+    score = 0
+    if (note_data.get("summary") or "").strip():
+        score += 40
+
+    points = note_data.get("points") or []
+    if points:
+        score += 25
+        if all(isinstance(p, dict) and p.get("topic") and p.get("detail") for p in points):
+            score += 5
+
+    decisions = note_data.get("decisions") or []
+    if decisions:
+        score += 20
+        if all(isinstance(d, dict) and d.get("content") for d in decisions):
+            score += 5
+
+    todos = note_data.get("todos") or []
+    if todos:
+        score += 15
+        if all(isinstance(t, dict) and t.get("owner") and t.get("item") for t in todos):
+            score += 5
+    return score
+
+
+def _block_flags(note_data: dict) -> dict:
+    return {
+        "summary": bool((note_data.get("summary") or "").strip()),
+        "points": bool(note_data.get("points") or []),
+        "decisions": bool(note_data.get("decisions") or []),
+        "todos": bool(note_data.get("todos") or []),
+    }
+
+
+def _blocks_present(note_data: dict) -> int:
+    return sum(1 for v in _block_flags(note_data).values() if v)
+
+
 def generate_note(transcript: str) -> dict:
     """返回 {summary, points, decisions, todos, quality}。永不抛异常。"""
     llm = get_llm()

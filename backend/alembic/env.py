@@ -53,6 +53,7 @@ def run_migrations_offline() -> None:
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
+        render_as_batch=True,  # SQLite: 带约束的 ALTER 用 copy-and-move
         dialect_opts={"paramstyle": "named"},
     )
 
@@ -75,7 +76,9 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata,
+            render_as_batch=True,  # SQLite: 带约束的 ALTER 用 copy-and-move
         )
 
         with context.begin_transaction():
