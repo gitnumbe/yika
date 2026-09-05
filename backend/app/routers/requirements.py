@@ -14,7 +14,7 @@ from .. import state_machine
 from ..auth import require_role
 from ..core.permissions import current_group_ids, group_filter
 from ..database import get_session
-from ..models import Project, ReqPriority, ReqSource, ReqStatus, Requirement, User
+from ..models import AuditLog, Project, ReqPriority, ReqSource, ReqStatus, Requirement, User
 from ..schemas import RequirementCreate, RequirementOut, TransitionIn
 
 router = APIRouter(prefix="/requirements", tags=["requirements"])
@@ -63,7 +63,7 @@ def get_requirement(req_id: int, db: Session = Depends(get_session), user: User 
 def submit_for_review(req_id: int, db: Session = Depends(get_session), user: User = Depends(ROLE_ALL)):
     """草稿 → 待评审（作者提交）。"""
     r = _get_or_404(db, req_id, user)
-    _do_transition(db, r, ReqStatus.pending_review)
+    _do_transition(db, r, ReqStatus.pending_review, user=user)
     return _out(r)
 
 
@@ -100,6 +100,21 @@ def _do_transition(db, r, to, reason="", user=None):
     if to in (ReqStatus.feasible, ReqStatus.infeasible, ReqStatus.info_needed, ReqStatus.plan_needed):
         r.reviewer_id = user.id
         r.review_conclusion = reason
+    # 敏感操作写审计（§12.6：评审/交付/提交）
+    audit_action = {
+        ReqStatus.pending_review: "requirement.submit_review",
+        ReqStatus.feasible: "requirement.review",
+        ReqStatus.infeasible: "requirement.review",
+        ReqStatus.info_needed: "requirement.review",
+        ReqStatus.plan_needed: "requirement.review",
+        ReqStatus.in_dev: "requirement.deliver",
+        ReqStatus.delivered: "requirement.deliver",
+    }.get(to)
+    if audit_action:
+        db.add(AuditLog(user_id=(user.id if user else None), action=audit_action,
+                        target_type="Requirement", target_id=str(r.id),
+                        entity="Requirement", entity_id=str(r.id),
+                        detail={"to": to.value, "reason": reason}))
     db.commit()
     db.refresh(r)
 

@@ -137,11 +137,14 @@ def record_login_success(db: Session, user: User) -> None:
 # ---------- 请求依赖 ----------
 
 def get_current_user(
-    token: str = Header(None),
+    authorization: str | None = Header(None, alias="Authorization"),
+    token: str | None = Header(None),
     request: Request = None,
     db: Session = Depends(get_session),
 ) -> User:
-    # 优先 header；iframe 子系统场景（或无 header）回退到共享域 Cookie
+    # 优先 Authorization: Bearer <jwt>（文档 §12.1）；兼容现有前端/测试自定义 token 头；回退共享域 Cookie（iframe 子系统）
+    if authorization:
+        token = authorization[7:] if authorization.lower().startswith("bearer ") else authorization
     if not token and request is not None:
         token = request.cookies.get(settings.cookie_name)
     if not token:

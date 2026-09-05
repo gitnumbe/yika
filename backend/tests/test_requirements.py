@@ -4,6 +4,7 @@ v3：需求挂项目下；开发建需求→submit(draft→待评审)；评审�
 讲师不能做评审流转。
 """
 import uuid
+import sqlite3
 import pytest
 from fastapi.testclient import TestClient
 
@@ -69,3 +70,31 @@ def test_instructor_cannot_review(client):
     # 讲师尝试评审拍板 → 403
     r = client.post(f"/requirements/{rid}/transition", json={"to": "feasible"}, headers=hi)
     assert r.status_code == 403
+
+
+def _audit_rows(action, target_id=None):
+    con = sqlite3.connect("test.db")
+    cur = con.cursor()
+    if target_id:
+        cur.execute("select action, user_id, target_id, detail from audit_logs where action=? and target_id=?",
+                    (action, str(target_id)))
+    else:
+        cur.execute("select action, user_id, target_id, detail from audit_logs where action=?", (action,))
+    rows = cur.fetchall()
+    con.close()
+    return rows
+
+
+def test_review_and_deliver_write_audit(client):
+    """§12.6：评审(→feasible)、交付(→in_dev/→delivered) 应写 AuditLog。"""
+    a = _login(client)
+    gid, pid, ltok = _mk_user_in_group(client, a, "reqAudit", "leader")
+    h = {"token": ltok}
+    rid = client.post("/requirements/", json={"title": "审计测试需求", "project_id": pid}, headers=h).json()["id"]
+    client.post(f"/requirements/{rid}/submit", headers=h)
+    assert _audit_rows("requirement.submit_review", rid), "提交评审应写审计"
+    client.post(f"/requirements/{rid}/transition", json={"to": "feasible", "reason": "评估可行"}, headers=h)
+    assert _audit_rows("requirement.review", rid), "组长评审应写审计"
+    client.post(f"/requirements/{rid}/transition", json={"to": "in_dev"}, headers=h)
+    client.post(f"/requirements/{rid}/transition", json={"to": "delivered"}, headers=h)
+    assert _audit_rows("requirement.deliver", rid), "开发/交付应写审计"

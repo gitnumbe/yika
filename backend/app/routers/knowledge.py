@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from ..auth import require_role
 from ..database import get_session
-from ..models import Knowledge, Role, User
+from ..models import AuditLog, Knowledge, Role, User
 from ..schemas import KnowledgeIn, KnowledgeOut
 
 router = APIRouter(prefix="/knowledge", tags=["knowledge"])
@@ -71,6 +71,10 @@ def review_knowledge(kid: int, db: Session = Depends(get_session), user: User = 
     k.status = "published"
     k.reviewer_id = user.id
     k.reviewed_at = datetime.utcnow()
+    db.add(AuditLog(user_id=user.id, action="knowledge.review",
+                    target_type="Knowledge", target_id=str(k.id),
+                    entity="Knowledge", entity_id=str(k.id),
+                    detail={"from_status": "draft", "to_status": "published"}))
     db.commit()
     db.refresh(k)
     return _out(k)

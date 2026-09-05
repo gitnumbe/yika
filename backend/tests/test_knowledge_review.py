@@ -71,3 +71,10 @@ def test_leader_reviews_instructor_draft(client):
     assert r.status_code == 200, r.text
     assert r.json()["status"] == "published"
     assert r.json()["reviewer_id"] is not None
+    # 审核应写审计（§12.6）
+    import sqlite3
+    con = sqlite3.connect("test.db")
+    rows = con.execute("select action from audit_logs where action='knowledge.review' and target_id=?",
+                       (str(kid),)).fetchall()
+    con.close()
+    assert rows, "知识审核应写 AuditLog"
